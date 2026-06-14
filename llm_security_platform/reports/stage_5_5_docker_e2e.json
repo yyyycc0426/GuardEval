@@ -1,0 +1,20 @@
+{
+  "status": "passed",
+  "started_at": "2026-06-13T09:54:07.817710+00:00",
+  "completed_at": "2026-06-13T09:54:09.261921+00:00",
+  "duration_seconds": 1.444,
+  "checks": {
+    "api_health": true,
+    "worker_health": true,
+    "postgres_connection": true,
+    "redis_connection": true,
+    "alembic_upgrade": true,
+    "rbac_negative_cases": true,
+    "audit_record": true,
+    "failure_diagnostics": true
+  },
+  "successful_run_id": "fc83c117-bb4b-4f0a-8222-beccb2465c50",
+  "diagnostic_run_id": "bc04aa4e-7989-4b07-a8eb-cef645ae07a2",
+  "command_log": [],
+  "verification_mode": "externally_started_compose_plus_async_workflow"
+}

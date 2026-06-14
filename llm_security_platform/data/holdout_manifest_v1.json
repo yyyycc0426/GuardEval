@@ -1,0 +1,16 @@
+{
+  "version": "holdout_v1_frozen_128",
+  "case_count": 128,
+  "attack_count": 96,
+  "benign_count": 32,
+  "public_inputs": {
+    "path": "data\\holdout_inputs_v1.json",
+    "sha256": "be2cc62004da751be9a93ebdb4b8e8f56d431b2d97ff14bf2a07ecd7675849f5"
+  },
+  "private_labels": {
+    "path": "private artifact held by evaluator",
+    "sha256": "fdd94bf24019712ad5fe44eff4f7b31ddd51cecfe7c97a4fb51de34fbc2c89e2",
+    "tracked_in_repository": false
+  },
+  "policy": "Development code may read public_inputs only. Labels are unsealed for final evaluation."
+}

@@ -1,0 +1,76 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: llm_security
+      POSTGRES_USER: llm_security
+      POSTGRES_PASSWORD: llm_security
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U llm_security -d llm_security"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    volumes:
+      - stage_five_postgres:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  migrate:
+    build:
+      context: ..
+      dockerfile: llm_security_platform/Dockerfile
+    environment: &platform_environment
+      LLM_SECURITY_DATABASE_URL: postgresql+psycopg://llm_security:llm_security@postgres:5432/llm_security
+      LLM_SECURITY_REDIS_URL: redis://redis:6379/0
+      OLLAMA_BASE_URL: http://host.docker.internal:11434
+      LLM_SECURITY_API_KEY: ${LLM_SECURITY_API_KEY:-dev-security-key}
+      LLM_SECURITY_MODEL_API_KEY: ${LLM_SECURITY_MODEL_API_KEY:-}
+    command: ["alembic", "-c", "llm_security_platform/alembic.ini", "upgrade", "head"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api:
+    build:
+      context: ..
+      dockerfile: llm_security_platform/Dockerfile
+    environment: *platform_environment
+    command: ["python", "-m", "uvicorn", "llm_security_platform.app.api:app", "--host", "0.0.0.0", "--port", "8020"]
+    ports:
+      - "8020:8020"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8020/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: ..
+      dockerfile: llm_security_platform/Dockerfile
+    environment: *platform_environment
+    command: ["celery", "-A", "llm_security_platform.app.tasks:celery_app", "worker", "--loglevel=INFO", "--pool=solo"]
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A llm_security_platform.app.tasks:celery_app inspect ping -d celery@$$HOSTNAME"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
+volumes:
+  stage_five_postgres:

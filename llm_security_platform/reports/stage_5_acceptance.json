@@ -1,0 +1,26 @@
+{
+  "status": "passed",
+  "docker_e2e_report": "stage_5_5_docker_e2e.json",
+  "frozen_benchmark_run": {
+    "run_id": "e270e889-1a58-449c-90d5-6efbe88cdebf",
+    "dataset_version": "attackset_v2_frozen_64",
+    "status": "COMPLETED",
+    "total_cases": 64,
+    "completed_cases": 64,
+    "success_cases": 64,
+    "failed_cases": 0,
+    "progress": 1.0,
+    "attack_success_rate": 0.0,
+    "normal_task_success_rate": 1.0,
+    "audit_count": 1
+  },
+  "acceptance_checks": {
+    "complete_run_stability": true,
+    "failure_diagnostics": true,
+    "rbac_enforced": true,
+    "docker_compose_e2e": true,
+    "stage_two_gate": true,
+    "stage_three_gate": true,
+    "stage_four_gate": true
+  }
+}

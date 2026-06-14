@@ -1,0 +1,42 @@
+{
+  "status": "passed",
+  "executed_at": "2026-06-13T09:56:44Z",
+  "environment": "Docker Compose: api, worker, postgres, redis, migrate",
+  "checks": {
+    "worker_interruption": {
+      "run_id": "0353f409-911a-42a4-827d-b8694acf4be6",
+      "status_without_worker": "PENDING",
+      "status_after_worker_restart": "COMPLETED",
+      "completed_cases": 2,
+      "failed_cases": 0
+    },
+    "redis_restart": {
+      "redis_after_restart": "PONG",
+      "api_after_restart": "healthy"
+    },
+    "model_timeout": {
+      "run_id": "129085a1-a6d3-4d16-8128-754335b2845f",
+      "status": "FAILED",
+      "case_error": "Mock request timed out after 0.05 seconds"
+    },
+    "duplicate_delivery": {
+      "run_id": "a0cb5104-9b05-4c63-a01b-efe1a311e16a",
+      "duplicate_task_results": ["ignored", "ignored"],
+      "attempts_before": 1,
+      "attempts_after": 1
+    },
+    "single_case_failure": {
+      "run_id": "8fd528a0-5861-492e-ae8c-5190bb3c1152",
+      "status": "PARTIAL_FAILED",
+      "success_cases": 1,
+      "failed_cases": 1,
+      "failed_case": "atk-001"
+    },
+    "task_cancellation": {
+      "run_id": "36a260c9-26b5-4bcf-a148-864047503df2",
+      "status": "CANCELLED",
+      "completed_cases": 0,
+      "cancel_requested": true
+    }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "status": "passed",
+  "console_path": "/console/",
+  "browser_demo_run_id": "060f3a04-afdf-4435-85a6-628c2fc1cf4a",
+  "browser_demo_cases": 64,
+  "browser_demo_status": "COMPLETED",
+  "pages": {
+    "dataset_management": true,
+    "run_creation_and_progress": true,
+    "results_overview": true,
+    "case_evidence_chain": true
+  },
+  "acceptance": {
+    "dataset_filters_and_import": true,
+    "async_run_creation": true,
+    "run_progress": true,
+    "security_metrics": true,
+    "model_and_defense_comparison": true,
+    "complete_case_evidence": true,
+    "detector_judge_defense_review_display": true,
+    "audit_and_versions": true,
+    "docker_backend_compatible": true,
+    "documentation_and_demo_assets": true
+  },
+  "verification": {
+    "platform_tests": "39 passed",
+    "stage_two_gate": "passed",
+    "stage_three_gate": "passed",
+    "stage_four_gate": "passed",
+    "browser_interaction": "passed"
+  }
+}

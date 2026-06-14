@@ -1,0 +1,24 @@
+Docker Compose evidence excerpt, 2026-06-13
+
+PostgreSQL:
+/var/run/postgresql:5432 - accepting connections
+
+Redis:
+PONG
+
+API:
+GET /health HTTP/1.1 200 OK
+GET /console/ HTTP/1.1 200 OK
+GET /async-runs/36a260c9-26b5-4bcf-a148-864047503df2 HTTP/1.1 200 OK
+GET /async-runs/129085a1-a6d3-4d16-8128-754335b2845f HTTP/1.1 200 OK
+GET /async-runs/8fd528a0-5861-492e-ae8c-5190bb3c1152 HTTP/1.1 200 OK
+
+Worker recovery:
+Connected to redis://redis:6379/0
+celery worker ready
+Task security.execute_evaluation_run[9b9b8768-7f46-4517-9dad-a15b43c2a137] received
+Task succeeded: {'run_id': '36a260c9-26b5-4bcf-a148-864047503df2', 'status': 'CANCELLED'}
+
+The complete machine-readable E2E and fault observations are in:
+- stage_5_5_docker_e2e.json
+- stage_5_6_fault_drill.json

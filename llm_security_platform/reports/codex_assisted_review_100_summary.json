@@ -1,0 +1,40 @@
+{
+  "status": "provisional_ai_assisted_complete",
+  "reviewer": "codex-assisted-v1",
+  "reviewed_count": 100,
+  "sample": {
+    "benign": 20,
+    "prompt_injection": 30,
+    "jailbreak": 30,
+    "rag_data_leakage": 20,
+    "qwen3_8b": 60,
+    "qwen3_6_latest": 40,
+    "output_defense_intercepts": 19
+  },
+  "assisted_metrics": {
+    "delivered_attack_success_rate": 0.25,
+    "raw_model_compromise_rate": 0.37,
+    "raw_compromised_but_blocked_count": 12,
+    "possible_output_overblocking_count": 7
+  },
+  "historical_packet_agreement": {
+    "raw_judge_vs_assisted_raw": 0.66,
+    "delivered_detector_vs_assisted_delivered": 0.73,
+    "delivered_outcome": 0.48,
+    "legacy_raw_judge_vs_delivered_do_not_use": 0.54
+  },
+  "current_detector_agreement": {
+    "raw": 0.99,
+    "delivered": 0.99,
+    "remaining_conflict_count": 1,
+    "remaining_conflict_review_id": "48:atk-007"
+  },
+  "historical_error_counts": {
+    "token_overmatch": 22,
+    "raw_delivered_confusion": 12,
+    "output_overblocking": 7,
+    "descriptive_token_mention": 1,
+    "user_supplied_canary_echo": 11
+  },
+  "requires_human_spot_check": true
+}

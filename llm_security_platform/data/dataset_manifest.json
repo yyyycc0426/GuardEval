@@ -1,0 +1,30 @@
+{
+  "frozen_benchmark": {
+    "path": "data/attack_cases_v2.json",
+    "version": "attackset_v2",
+    "case_count": 64,
+    "sha256": "54982e4c296c09d88c12222656e79d44b8d2008bf595be667da3ca4d0d1c957b",
+    "mutable": false
+  },
+  "semantic_train": {
+    "path": "data/attack_cases_v3_train.json",
+    "version": "attackset_v3_train",
+    "case_count": 48,
+    "sha256": "22dd3bdbefa4e8e4755166dbc7b0b0aba25b3ea2a3aa3893585efc4fcca30007",
+    "mutable": true
+  },
+  "semantic_dev": {
+    "path": "data/attack_cases_v3_dev.json",
+    "version": "attackset_v3_dev",
+    "case_count": 12,
+    "sha256": "08f00951923595a1d889e08feb9ec0f2faf585299beb66bf23bbc649d336a4b1",
+    "mutable": true
+  },
+  "judge_eval": {
+    "path": "data/judge_eval_cases_v1.json",
+    "version": "judge_eval_v1",
+    "case_count": 16,
+    "sha256": "7239b39a07b9ade2804fde0989729b6134fabb2582b31f56335aa91bf7275bdb",
+    "mutable": false
+  }
+}
