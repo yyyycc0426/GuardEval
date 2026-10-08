@@ -22,3 +22,15 @@
 - OCR 图片输入和图片敏感信息检测。
 
 核心实验优先于基础设施。真实模型结果、可靠标签和防御权衡未完成前，不以环境组件数量作为项目完成度。
+
+## Content-Safety Track / 内容安全评测轨道（已完成）
+
+独立于阶段 0–6 攻防主线的一条**内容分类评测轨道**，用公开真人标注基准为判定器做外部效度校准。
+
+- 数据：HateXplain（20,148 条，normal/offensive/hatespeech，多数票 gold，官方 8:1:1 划分，sha256 锁定）。
+- 分类器对照：TF-IDF 离线基线、本地 qwen3:8b、云端 gemini-2.5-flash（Vertex AI + ADC）。
+- 指标：accuracy / macro-F1 / 混淆矩阵（三分类 + toxic 二分类），失败调用单独计数并排除；外加 token 级 rationale 解释性评测（模型证据词 vs 真人标注）。
+- 发现：本地与云端 LLM 一致过度拦截（有害召回 ~98–99%，正常召回 0.30–0.47）。
+- 入口：`run_content_safety_benchmark.py`、`run_rationale_benchmark.py`、`content_safety_gate.py`；详见 [`content_safety_track.md`](content_safety_track.md)。
+
+与攻防管线刻意分离：任务是内容分类、指标不是 ASR；它给平台原有的自建攻击样本提供了公开数据的外部效度。

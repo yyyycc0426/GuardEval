@@ -2,8 +2,8 @@
   "frozen_benchmark": {
     "path": "data/attack_cases_v2.json",
     "version": "attackset_v2",
-    "case_count": 64,
-    "sha256": "54982e4c296c09d88c12222656e79d44b8d2008bf595be667da3ca4d0d1c957b",
+    "case_count": 104,
+    "sha256": "eb09fa52644430d7ba38864c9c0f38d8ab62e1a35c8b628ccab031620ce50a07",
     "mutable": false
   },
   "semantic_train": {

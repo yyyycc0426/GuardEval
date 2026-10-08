@@ -25,11 +25,63 @@ Security boundary:
 
 class InputDefense(DefensePolicy):
     name = "input_defense"
-    version = "input_v1"
+
+    def __init__(self, version="input_v1", config=None):
+        self.version = version
+        self.config = config or {}
+        self.hardened_suffix = self.config.get("system_prompt_suffix", HARDENED_SUFFIX)
+        patterns = self.config.get("command_patterns")
+        if patterns:
+            self.command_patterns = [re.compile(p, re.I) for p in patterns]
+        else:
+            self.command_patterns = COMMAND_PATTERNS
 
     def apply(self, context: DefenseContext):
         started = self.timer()
         before = context.user_prompt
+        
+        # Check for image input in case metadata
+        case_meta = context.case.get("metadata", {}) if context.case else {}
+        image_bytes = None
+        if "image_base64" in case_meta:
+            try:
+                base64_data = case_meta["image_base64"]
+                if "," in base64_data:
+                    base64_data = base64_data.split(",")[1]
+                import base64 as b64_lib
+                image_bytes = b64_lib.b64decode(base64_data)
+            except Exception:
+                pass
+        elif "image_path" in case_meta:
+            try:
+                from pathlib import Path
+                path = Path(case_meta["image_path"])
+                if not path.is_absolute():
+                    root = Path(__file__).resolve().parents[2]
+                    path = root / path
+                if path.exists():
+                    image_bytes = path.read_bytes()
+            except Exception:
+                pass
+
+        if image_bytes:
+            from llm_security_platform.app.multimodal import assess_multimodal_input
+            assessment = assess_multimodal_input(image_bytes, case_metadata=case_meta)
+            if assessment["success"]:
+                extracted_text = assessment["text"]
+                if extracted_text:
+                    before = f"[EXTRACTED IMAGE TEXT]\n{extracted_text}\n[END EXTRACTED TEXT]\n{before}"
+                if assessment["watermark"]["has_watermark"]:
+                    return self.decision(
+                        started_at=started,
+                        action="block",
+                        risk_level="high",
+                        reason=f"Watermark compliance breach: {assessment['watermark']['reason']}",
+                        evidence=["multimodal_watermark_detected"],
+                        before=context.user_prompt,
+                        after=None,
+                    )
+
         normalized = normalize_text(before)
         evidence = []
         if normalized != before.lower().strip():
@@ -47,7 +99,7 @@ class InputDefense(DefensePolicy):
 
         command_hits = []
         combined = f"{normalized} {' '.join(decoded_payloads)}"
-        for pattern in COMMAND_PATTERNS:
+        for pattern in self.command_patterns:
             match = pattern.search(combined)
             if match:
                 command_hits.append(match.group(0)[:100])
@@ -81,7 +133,7 @@ class InputDefense(DefensePolicy):
                 before=before,
                 after=sanitized,
                 metadata={
-                    "system_prompt_suffix": HARDENED_SUFFIX,
+                    "system_prompt_suffix": self.hardened_suffix,
                     "detector_risk_score": finding.risk_score,
                 },
             )

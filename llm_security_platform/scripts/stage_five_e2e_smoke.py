@@ -65,11 +65,11 @@ def wait_for_api(timeout=180):
     raise TimeoutError("API health check did not become ready")
 
 
-def wait_for_run(run_id, expected_status, timeout=180):
+def wait_for_run(run_id, expected_status, api_key=ADMIN_KEY, timeout=180):
     deadline = time.monotonic() + timeout
     last = None
     while time.monotonic() < deadline:
-        last = api("GET", f"/async-runs/{run_id}")["data"]
+        last = api("GET", f"/async-runs/{run_id}", api_key=api_key)["data"]
         if last["run"]["status"] == expected_status:
             return last
         if last["run"]["status"] in {"FAILED", "PARTIAL_FAILED", "CANCELLED", "COMPLETED"}:
@@ -118,10 +118,10 @@ def validate_successful_run():
         "case_ids": ["atk-001", "atk-002", "ok-001"],
     }, expected=202)
     run_id = created["data"]["run_id"]
-    result = wait_for_run(run_id, "COMPLETED")
+    result = wait_for_run(run_id, "COMPLETED", api_key="analyst-key")
     if result["run"]["completed_cases"] != 3 or result["run"]["failed_cases"] != 0:
         raise AssertionError(f"Unexpected completed run counters: {result['run']}")
-    audits = api("GET", f"/audit-logs?run_id={run_id}")["data"]
+    audits = api("GET", f"/audit-logs?run_id={run_id}", api_key="reviewer-key")["data"]
     if not any(item["action"] == "run.create" for item in audits):
         raise AssertionError(f"Creation audit not found for run {run_id}")
     return run_id
@@ -135,7 +135,7 @@ def validate_failure_diagnostics():
         "case_ids": ["atk-001"],
     }, expected=202)
     run_id = created["data"]["run_id"]
-    result = wait_for_run(run_id, "FAILED")
+    result = wait_for_run(run_id, "FAILED", api_key="analyst-key")
     summary = result["run"].get("error_summary") or ""
     if "API_KEY" not in summary:
         raise AssertionError(f"Failure reason is not actionable: {summary!r}")

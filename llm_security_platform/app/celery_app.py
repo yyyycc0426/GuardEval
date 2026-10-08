@@ -13,3 +13,10 @@ celery_app.conf.update(
     task_track_started=True,
     timezone="UTC",
 )
+
+celery_app.conf.beat_schedule = {
+    "cleanup-stale-fallback-reports-daily": {
+        "task": "security.cleanup_stale_fallback_reports",
+        "schedule": 86400.0,  # Run daily (24 hours)
+    }
+}

@@ -1,0 +1,116 @@
+{
+  "dataset": "hatexplain",
+  "dataset_path": "D:\\AI_Projects\\proj4\\llm_security_platform\\data\\hatexplain\\dataset.json",
+  "dataset_sha256": "63bb3340fee0ec469b09690d04cb68f7c187787dd8b83807f071892c084967fb",
+  "splits": {
+    "test": 1924,
+    "train": 15383,
+    "val": 1922
+  },
+  "train_label_distribution": {
+    "normal": 6251,
+    "hatespeech": 4748,
+    "offensive": 4384
+  },
+  "test_label_distribution": {
+    "normal": 782,
+    "hatespeech": 594,
+    "offensive": 548
+  },
+  "classifier": "tfidf_logreg_baseline",
+  "classifier_version": "tfidf_logreg_v1",
+  "provider": null,
+  "evaluated_count": 1924,
+  "average_inference_latency_ms": 0.026,
+  "metrics": {
+    "sample_count": 1924,
+    "three_class": {
+      "accuracy": 0.6663,
+      "macro_precision": 0.6551,
+      "macro_recall": 0.6562,
+      "macro_f1": 0.6555,
+      "weighted_f1": 0.6647,
+      "per_class": {
+        "normal": {
+          "precision": 0.7098,
+          "recall": 0.7225,
+          "f1": 0.7161,
+          "support": 782
+        },
+        "offensive": {
+          "precision": 0.5338,
+          "recall": 0.5036,
+          "f1": 0.5183,
+          "support": 548
+        },
+        "hatespeech": {
+          "precision": 0.7218,
+          "recall": 0.7424,
+          "f1": 0.732,
+          "support": 594
+        }
+      },
+      "confusion_matrix": {
+        "labels": [
+          "normal",
+          "offensive",
+          "hatespeech"
+        ],
+        "matrix": [
+          [
+            565,
+            148,
+            69
+          ],
+          [
+            171,
+            276,
+            101
+          ],
+          [
+            60,
+            93,
+            441
+          ]
+        ]
+      }
+    },
+    "binary_toxic": {
+      "accuracy": 0.7672,
+      "macro_precision": 0.7587,
+      "macro_recall": 0.7601,
+      "macro_f1": 0.7594,
+      "weighted_f1": 0.7675,
+      "per_class": {
+        "non-toxic": {
+          "precision": 0.7098,
+          "recall": 0.7225,
+          "f1": 0.7161,
+          "support": 782
+        },
+        "toxic": {
+          "precision": 0.8076,
+          "recall": 0.7977,
+          "f1": 0.8026,
+          "support": 1142
+        }
+      },
+      "confusion_matrix": {
+        "labels": [
+          "non-toxic",
+          "toxic"
+        ],
+        "matrix": [
+          [
+            565,
+            217
+          ],
+          [
+            231,
+            911
+          ]
+        ]
+      }
+    }
+  }
+}

@@ -1,4 +1,4 @@
-# LLM Security Evaluation Platform
+# GuardEval：LLM 应用安全评测与防御平台
 
 ## Stage Five Production Mode
 
@@ -207,10 +207,53 @@ uv run python -m llm_security_platform.run_defense_ablation
 uv run python -m llm_security_platform.stage_four_gate
 ```
 
-## 下一阶段
+## 阶段六：安全加固与性能优化（当前最新）
 
-1. 扩展到 60 至 100 条人工标注用例，并加入编码混淆和间接提示注入。
-2. 增加低成本语义分类器和 LLM Judge，同时保留人工复核集。
-3. 将同步执行升级为 Celery + Redis 批量任务。
-4. 增加 PostgreSQL、React 管理页面、Prometheus 指标和 Docker Compose。
-5. 使用至少两个真实模型开展防御前后实验，报告 ASR、F1、误杀率、P95 延迟和成本。
+本次升级完成了平台的核心加固与性能优化，使其更接近“内部 LLM/RAG 安全评测试点平台”的定位。当前证据支持可复现评测、防御策略对比、异步执行、审计与报告闭环；不应表述为已经生产上线的实时 LLM 安全网关：
+
+- **扩充评测数据集至 104 条**：新增了 40 条高混淆的先进攻击和正常业务用例，覆盖 Unicode 同形字欺骗（Homoglyphs）、多语言混合绕过（Code-switching）、系统提示词泄露变体（Prompt Leakage Pretexts）以及隐式间接注入。
+- **加固间接注入防御（RAG 安全边界隔离）**：
+  - **内容边界隔离**：在 RAG 防御层引入明确的 `[DOCUMENT START] ... [DOCUMENT END]` 边界标记，防止不可信文档内容被大模型混淆为高优先级系统指令。
+  - **输出层行为校验**：在输出层引入动态指令提取检测器，实时捕获并阻止大模型执行文档中隐藏的“say/print/output”恶意行为指令，将间接注入漏洞的拦截率（ASR 降幅）显著提升。
+- **并发评测架构优化**：
+  - 引入 `ThreadPoolExecutor` 评测并发管线，将模型 API 这类 I/O 请求并行化；数据库写入仍需依赖当前存储实现、事务边界和测试覆盖，不能承诺“100% 线程安全”。
+  - 评测时间由原来的 **10分钟** 大幅缩短至 **2分钟以内**，提供了出色的并发吞吐能力。
+- **Unicode 同形字全局防御机制**：
+  - 在核心分层检测系统（Rules/Regex）中植入 Unicode 同形字混淆还原算法，自动还原并清洗输入/输出文本中的欺骗字符。
+
+---
+
+## 7大云端大模型安全横评与防御消融实验结论
+
+针对固定安全用例集，平台在已记录的 provider/model 与防御策略组合上进行了对比实验。以下结论只适用于对应报告中的模型、数据集和运行环境，不能泛化为对所有主流模型的长期安全结论：
+
+1. **官方 API 安全网关是最大安全因子**：同样的 DeepSeek-V3，官方 API 的 ASR 为 6.67%，而第三方托管的裸模型 ASR 高达 60%，差距近 9 倍。
+2. **本平台防御效果卓越**：在开启本平台的防御策略（baseline）后，DeepSeek-V3（裸模型）的 ASR 从 **60.00%** 直接打到 **13.33%**，安全风险降低 **78%**！
+3. **分层防御的价值**：在间接注入（RAG）类用例中，报告显示裸模型更容易暴露风险；RAG 边界标记与输出校验可降低最终交付风险。但它不是“最后且绝对可靠的防线”，仍需要人审、持续样本更新和真实业务验证。
+
+---
+
+## 内容安全评测轨道（公开基准外部校准）
+
+除自建攻击用例外，平台新增一条**独立的内容安全评测轨道**，用公开人工标注基准为分类器/Judge 提供外部效度校准。当前接入 **HateXplain**（20,148 条 Twitter/Gab 帖子，三类：normal / offensive / hatespeech；官方 8:1:1 划分，gold 取 3 标注者多数票）。
+
+这条轨道与攻防（ASR）管线**刻意分离**：任务是**内容分类**而非红队攻击成功率，因此报告 accuracy / macro-F1 / 混淆矩阵（含三分类与 toxic/non-toxic 二分类两个视角），不是 ASR。详见 [`docs/content_safety_track.md`](docs/content_safety_track.md)。
+
+```powershell
+# 离线确定性基线（TF-IDF + LogisticRegression，零 API 成本，默认）
+python -m llm_security_platform.run_content_safety_benchmark
+# 多数类下限（健全性参照）
+python -m llm_security_platform.run_content_safety_benchmark --classifier majority
+# 可选：用目标模型做分类器（mock / ollama / openai_compatible，建议配 --limit 抽样）
+python -m llm_security_platform.run_content_safety_benchmark --classifier llm --provider mock --limit 200
+# 质量门禁（基线需超过多数类下限并达到 macro-F1 阈值）
+python -m llm_security_platform.content_safety_gate
+```
+
+当前离线基线在 1,924 条 test 上的结果（仅代表该基线与该数据集，不代表任何真实模型安全水平）：三分类 accuracy ≈ 0.67、macro-F1 ≈ 0.66，多数类下限 macro-F1 ≈ 0.19。`offensive` 与 `hatespeech` 边界模糊（offensive F1 ≈ 0.52）是该数据集已知难点。
+
+**LoRA 微调判定器（可选，需 CUDA 环境，依赖见 `requirements-ft.txt`）**：用 LoRA 微调 Qwen3-1.7B 做三分类（仅训练 0.37% 参数，单卡约 15 分钟），在与 LLM Judge 相同的 300 条分层样本上 macro-F1 0.685（qwen3:8b 零样本 0.495），正常内容误判率由 70% 降到 18%，代价是有害召回由 0.99 降到 0.815。同一 adapter 换成 4-bit NF4 推理，峰值显存 -51%，完整 test 集 macro-F1 基本不变（0.686 → 0.688），但单条时延增加约 9%–14%。细节与取舍见 [`docs/content_safety_track.md`](docs/content_safety_track.md)。
+
+```powershell
+python -m llm_security_platform.run_lora_safety_judge
+```

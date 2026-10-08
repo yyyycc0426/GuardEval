@@ -22,8 +22,11 @@ class StageFiveRBACTests(unittest.TestCase):
         production_store._engine_url = None
         self.context = TestClient(app)
         self.client = self.context.__enter__()
+        self.redis_patcher = patch("llm_security_platform.app.api.get_redis", return_value=None)
+        self.redis_patcher.start()
 
     def tearDown(self):
+        self.redis_patcher.stop()
         self.context.__exit__(None, None, None)
         if production_store._engine is not None:
             production_store._engine.dispose()

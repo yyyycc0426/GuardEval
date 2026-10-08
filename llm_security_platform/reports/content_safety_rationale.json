@@ -1,0 +1,17 @@
+{
+  "dataset": "hatexplain",
+  "dataset_sha256": "63bb3340fee0ec469b09690d04cb68f7c187787dd8b83807f071892c084967fb",
+  "classifier": "tfidf_logreg_baseline",
+  "classifier_version": "tfidf_logreg_v1",
+  "attribution": "linear_coefficient_token_contribution",
+  "eligible_toxic_posts_with_rationale": 1142,
+  "model_predicted_toxic": 911,
+  "rationale_metrics": {
+    "macro_precision": 0.4316,
+    "macro_recall": 0.7104,
+    "macro_f1": 0.451,
+    "macro_iou": 0.3214,
+    "evaluated_posts": 911
+  },
+  "note": "Token-level overlap of model attribution vs human rationale, on toxic posts the model correctly flags. Offline/deterministic."
+}

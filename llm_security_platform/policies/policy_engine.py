@@ -5,9 +5,7 @@ from uuid import uuid4
 from llm_security_platform.app.schemas import DefenseDecision
 from llm_security_platform.app.rag_context import render_untrusted_documents
 from llm_security_platform.policies.base import DefenseContext
-from llm_security_platform.policies.input_defense import HARDENED_SUFFIX, InputDefense
-from llm_security_platform.policies.output_defense import OutputDefense
-from llm_security_platform.policies.rag_defense import RAGDefense
+from llm_security_platform.policies.input_defense import HARDENED_SUFFIX
 
 
 POLICY_ORDER = ("input_defense", "rag_defense", "output_defense")
@@ -36,23 +34,52 @@ class DefenseExecution:
 
 
 class PolicyEngine:
-    def __init__(self, bundle):
+    def __init__(self, bundle, versions=None, tenant_id="default"):
         self.bundle = parse_policy_bundle(bundle) if isinstance(bundle, str) else list(bundle)
-        self.policies = {
-            "input_defense": InputDefense(),
-            "rag_defense": RAGDefense(),
-            "output_defense": OutputDefense(),
-        }
+        self.versions = versions or {}
+        self.tenant_id = tenant_id
+        
+        self.policies = {}
+        for name in self.bundle:
+            if name == "baseline":
+                continue
+            version = self.versions.get(name) or f"{name.split('_')[0]}_v1"
+            self.policies[name] = self._load_policy(name, version)
+
+    def _load_policy(self, name, version):
+        from llm_security_platform.app import db
+        policy_record = db.get_defense_policy(name, version, tenant_id=self.tenant_id)
+        config = policy_record["config"] if policy_record else {}
+        
+        if name == "input_defense":
+            from llm_security_platform.policies.input_defense import InputDefense
+            return InputDefense(version=version, config=config)
+        elif name == "rag_defense":
+            from llm_security_platform.policies.rag_defense import RAGDefense
+            return RAGDefense(version=version, config=config)
+        elif name == "output_defense":
+            from llm_security_platform.policies.output_defense import OutputDefense
+            return OutputDefense(version=version, config=config)
+        else:
+            raise ValueError(f"Unknown policy name: {name}")
 
     def _baseline(self, context):
         started = perf_counter()
         from llm_security_platform.app.detectors import detect_input_risk
+        from llm_security_platform.app import db
+        
+        version = self.versions.get("baseline") or "baseline_v1"
+        policy_record = db.get_defense_policy("baseline", version, tenant_id=self.tenant_id)
+        config = policy_record["config"] if policy_record else {}
+        
+        threshold = config.get("block_threshold", 0.7)
+        suffix = config.get("system_prompt_suffix", HARDENED_SUFFIX)
 
         score, signals = detect_input_risk(context.user_prompt)
-        blocked = score >= 0.7
+        blocked = score >= threshold
         return DefenseDecision(
             policy_name="baseline",
-            policy_version="baseline_v1",
+            policy_version=version,
             enabled=True,
             action="block" if blocked else "rewrite",
             risk_level="high" if blocked else "medium",
@@ -62,7 +89,7 @@ class PolicyEngine:
             after=None if blocked else context.user_prompt,
             latency_ms=round((perf_counter() - started) * 1000, 3),
             audit_id=f"def-{uuid4().hex}",
-            metadata={"system_prompt_suffix": HARDENED_SUFFIX, "risk_score": score},
+            metadata={"system_prompt_suffix": suffix, "risk_score": score},
         )
 
     def before_model(self, context: DefenseContext):

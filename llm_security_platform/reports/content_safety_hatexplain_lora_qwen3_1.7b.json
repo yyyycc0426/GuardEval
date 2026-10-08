@@ -1,0 +1,623 @@
+{
+  "dataset": "hatexplain",
+  "dataset_sha256": "63bb3340fee0ec469b09690d04cb68f7c187787dd8b83807f071892c084967fb",
+  "splits": {
+    "test": 1924,
+    "train": 15383,
+    "val": 1922
+  },
+  "train_label_distribution": {
+    "normal": 6251,
+    "hatespeech": 4748,
+    "offensive": 4384
+  },
+  "classifier": "lora_seq_cls",
+  "base_model": "Qwen/Qwen3-1.7B",
+  "lora": {
+    "rank": 16,
+    "alpha": 32,
+    "target_modules": [
+      "q_proj",
+      "k_proj",
+      "v_proj",
+      "o_proj"
+    ]
+  },
+  "hyperparameters": {
+    "epochs": 2,
+    "lr": 0.0002,
+    "batch_size": 16,
+    "max_len": 128,
+    "seed": 20260628,
+    "limit_train": null
+  },
+  "sampling": "stratified_100_per_class_seed_20260628",
+  "environment": {
+    "gpu": "NVIDIA GeForce RTX 5070 Ti Laptop GPU",
+    "torch": "2.11.0+cu128",
+    "python": "3.12.8"
+  },
+  "training": {
+    "trainable_params": 6428672,
+    "total_params": 1727009792,
+    "trainable_ratio": 0.003722,
+    "epochs": 2,
+    "best_epoch": 2,
+    "best_val_macro_f1": 0.693,
+    "history": [
+      {
+        "epoch": 1,
+        "train_loss": 0.8124,
+        "val_macro_f1": 0.6658
+      },
+      {
+        "epoch": 2,
+        "train_loss": 0.5958,
+        "val_macro_f1": 0.693
+      }
+    ],
+    "train_seconds": 888.6
+  },
+  "inference": [
+    {
+      "quantization": "bf16",
+      "sample_metrics": {
+        "sample_count": 300,
+        "three_class": {
+          "accuracy": 0.6933,
+          "macro_precision": 0.6866,
+          "macro_recall": 0.6933,
+          "macro_f1": 0.6846,
+          "weighted_f1": 0.6846,
+          "per_class": {
+            "normal": {
+              "precision": 0.6891,
+              "recall": 0.82,
+              "f1": 0.7489,
+              "support": 100
+            },
+            "offensive": {
+              "precision": 0.6184,
+              "recall": 0.47,
+              "f1": 0.5341,
+              "support": 100
+            },
+            "hatespeech": {
+              "precision": 0.7524,
+              "recall": 0.79,
+              "f1": 0.7707,
+              "support": 100
+            }
+          },
+          "confusion_matrix": {
+            "labels": [
+              "normal",
+              "offensive",
+              "hatespeech"
+            ],
+            "matrix": [
+              [
+                82,
+                14,
+                4
+              ],
+              [
+                31,
+                47,
+                22
+              ],
+              [
+                6,
+                15,
+                79
+              ]
+            ]
+          }
+        },
+        "binary_toxic": {
+          "accuracy": 0.8167,
+          "macro_precision": 0.7948,
+          "macro_recall": 0.8175,
+          "macro_f1": 0.8023,
+          "weighted_f1": 0.82,
+          "per_class": {
+            "non-toxic": {
+              "precision": 0.6891,
+              "recall": 0.82,
+              "f1": 0.7489,
+              "support": 100
+            },
+            "toxic": {
+              "precision": 0.9006,
+              "recall": 0.815,
+              "f1": 0.8556,
+              "support": 200
+            }
+          },
+          "confusion_matrix": {
+            "labels": [
+              "non-toxic",
+              "toxic"
+            ],
+            "matrix": [
+              [
+                82,
+                18
+              ],
+              [
+                37,
+                163
+              ]
+            ]
+          }
+        }
+      },
+      "full_test_metrics": {
+        "sample_count": 1924,
+        "three_class": {
+          "accuracy": 0.7017,
+          "macro_precision": 0.6866,
+          "macro_recall": 0.6882,
+          "macro_f1": 0.6862,
+          "weighted_f1": 0.6971,
+          "per_class": {
+            "normal": {
+              "precision": 0.7415,
+              "recall": 0.7775,
+              "f1": 0.7591,
+              "support": 782
+            },
+            "offensive": {
+              "precision": 0.5663,
+              "recall": 0.4909,
+              "f1": 0.5259,
+              "support": 548
+            },
+            "hatespeech": {
+              "precision": 0.752,
+              "recall": 0.7963,
+              "f1": 0.7735,
+              "support": 594
+            }
+          },
+          "confusion_matrix": {
+            "labels": [
+              "normal",
+              "offensive",
+              "hatespeech"
+            ],
+            "matrix": [
+              [
+                608,
+                129,
+                45
+              ],
+              [
+                168,
+                269,
+                111
+              ],
+              [
+                44,
+                77,
+                473
+              ]
+            ]
+          }
+        },
+        "binary_toxic": {
+          "accuracy": 0.7994,
+          "macro_precision": 0.7919,
+          "macro_recall": 0.7959,
+          "macro_f1": 0.7936,
+          "weighted_f1": 0.8001,
+          "per_class": {
+            "non-toxic": {
+              "precision": 0.7415,
+              "recall": 0.7775,
+              "f1": 0.7591,
+              "support": 782
+            },
+            "toxic": {
+              "precision": 0.8424,
+              "recall": 0.8144,
+              "f1": 0.8281,
+              "support": 1142
+            }
+          },
+          "confusion_matrix": {
+            "labels": [
+              "non-toxic",
+              "toxic"
+            ],
+            "matrix": [
+              [
+                608,
+                174
+              ],
+              [
+                212,
+                930
+              ]
+            ]
+          }
+        }
+      },
+      "latency_bs1_ms_mean": 80.46,
+      "latency_bs1_ms_p95": 98.56,
+      "throughput_bs32_posts_per_s": 197.6,
+      "peak_gpu_memory_mb": 3789.7
+    },
+    {
+      "quantization": "nf4",
+      "sample_metrics": {
+        "sample_count": 300,
+        "three_class": {
+          "accuracy": 0.7267,
+          "macro_precision": 0.7231,
+          "macro_recall": 0.7267,
+          "macro_f1": 0.7241,
+          "weighted_f1": 0.7241,
+          "per_class": {
+            "normal": {
+              "precision": 0.7843,
+              "recall": 0.8,
+              "f1": 0.7921,
+              "support": 100
+            },
+            "offensive": {
+              "precision": 0.6374,
+              "recall": 0.58,
+              "f1": 0.6073,
+              "support": 100
+            },
+            "hatespeech": {
+              "precision": 0.7477,
+              "recall": 0.8,
+              "f1": 0.7729,
+              "support": 100
+            }
+          },
+          "confusion_matrix": {
+            "labels": [
+              "normal",
+              "offensive",
+              "hatespeech"
+            ],
+            "matrix": [
+              [
+                80,
+                15,
+                5
+              ],
+              [
+                20,
+                58,
+                22
+              ],
+              [
+                2,
+                18,
+                80
+              ]
+            ]
+          }
+        },
+        "binary_toxic": {
+          "accuracy": 0.86,
+          "macro_precision": 0.8417,
+          "macro_recall": 0.845,
+          "macro_f1": 0.8433,
+          "weighted_f1": 0.8603,
+          "per_class": {
+            "non-toxic": {
+              "precision": 0.7843,
+              "recall": 0.8,
+              "f1": 0.7921,
+              "support": 100
+            },
+            "toxic": {
+              "precision": 0.899,
+              "recall": 0.89,
+              "f1": 0.8945,
+              "support": 200
+            }
+          },
+          "confusion_matrix": {
+            "labels": [
+              "non-toxic",
+              "toxic"
+            ],
+            "matrix": [
+              [
+                80,
+                20
+              ],
+              [
+                22,
+                178
+              ]
+            ]
+          }
+        }
+      },
+      "full_test_metrics": {
+        "sample_count": 1924,
+        "three_class": {
+          "accuracy": 0.698,
+          "macro_precision": 0.6865,
+          "macro_recall": 0.6917,
+          "macro_f1": 0.6879,
+          "weighted_f1": 0.6973,
+          "per_class": {
+            "normal": {
+              "precision": 0.7809,
+              "recall": 0.7199,
+              "f1": 0.7492,
+              "support": 782
+            },
+            "offensive": {
+              "precision": 0.55,
+              "recall": 0.542,
+              "f1": 0.546,
+              "support": 548
+            },
+            "hatespeech": {
+              "precision": 0.7285,
+              "recall": 0.8131,
+              "f1": 0.7685,
+              "support": 594
+            }
+          },
+          "confusion_matrix": {
+            "labels": [
+              "normal",
+              "offensive",
+              "hatespeech"
+            ],
+            "matrix": [
+              [
+                563,
+                158,
+                61
+              ],
+              [
+                132,
+                297,
+                119
+              ],
+              [
+                26,
+                85,
+                483
+              ]
+            ]
+          }
+        },
+        "binary_toxic": {
+          "accuracy": 0.8041,
+          "macro_precision": 0.7994,
+          "macro_recall": 0.7908,
+          "macro_f1": 0.7942,
+          "weighted_f1": 0.8026,
+          "per_class": {
+            "non-toxic": {
+              "precision": 0.7809,
+              "recall": 0.7199,
+              "f1": 0.7492,
+              "support": 782
+            },
+            "toxic": {
+              "precision": 0.818,
+              "recall": 0.8616,
+              "f1": 0.8392,
+              "support": 1142
+            }
+          },
+          "confusion_matrix": {
+            "labels": [
+              "non-toxic",
+              "toxic"
+            ],
+            "matrix": [
+              [
+                563,
+                219
+              ],
+              [
+                158,
+                984
+              ]
+            ]
+          }
+        }
+      },
+      "latency_bs1_ms_mean": 92.01,
+      "latency_bs1_ms_p95": 107.92,
+      "throughput_bs32_posts_per_s": 195.6,
+      "peak_gpu_memory_mb": 1857.8
+    }
+  ],
+  "subset_90_metrics_bf16": {
+    "sample_count": 90,
+    "three_class": {
+      "accuracy": 0.5778,
+      "macro_precision": 0.5637,
+      "macro_recall": 0.5778,
+      "macro_f1": 0.5656,
+      "weighted_f1": 0.5656,
+      "per_class": {
+        "normal": {
+          "precision": 0.6316,
+          "recall": 0.8,
+          "f1": 0.7059,
+          "support": 30
+        },
+        "offensive": {
+          "precision": 0.4167,
+          "recall": 0.3333,
+          "f1": 0.3704,
+          "support": 30
+        },
+        "hatespeech": {
+          "precision": 0.6429,
+          "recall": 0.6,
+          "f1": 0.6207,
+          "support": 30
+        }
+      },
+      "confusion_matrix": {
+        "labels": [
+          "normal",
+          "offensive",
+          "hatespeech"
+        ],
+        "matrix": [
+          [
+            24,
+            5,
+            1
+          ],
+          [
+            11,
+            10,
+            9
+          ],
+          [
+            3,
+            9,
+            18
+          ]
+        ]
+      }
+    },
+    "binary_toxic": {
+      "accuracy": 0.7778,
+      "macro_precision": 0.7581,
+      "macro_recall": 0.7833,
+      "macro_f1": 0.7637,
+      "weighted_f1": 0.7829,
+      "per_class": {
+        "non-toxic": {
+          "precision": 0.6316,
+          "recall": 0.8,
+          "f1": 0.7059,
+          "support": 30
+        },
+        "toxic": {
+          "precision": 0.8846,
+          "recall": 0.7667,
+          "f1": 0.8214,
+          "support": 60
+        }
+      },
+      "confusion_matrix": {
+        "labels": [
+          "non-toxic",
+          "toxic"
+        ],
+        "matrix": [
+          [
+            24,
+            6
+          ],
+          [
+            14,
+            46
+          ]
+        ]
+      }
+    }
+  },
+  "tfidf_full_test_metrics": {
+    "sample_count": 1924,
+    "three_class": {
+      "accuracy": 0.6663,
+      "macro_precision": 0.6551,
+      "macro_recall": 0.6562,
+      "macro_f1": 0.6555,
+      "weighted_f1": 0.6647,
+      "per_class": {
+        "normal": {
+          "precision": 0.7098,
+          "recall": 0.7225,
+          "f1": 0.7161,
+          "support": 782
+        },
+        "offensive": {
+          "precision": 0.5338,
+          "recall": 0.5036,
+          "f1": 0.5183,
+          "support": 548
+        },
+        "hatespeech": {
+          "precision": 0.7218,
+          "recall": 0.7424,
+          "f1": 0.732,
+          "support": 594
+        }
+      },
+      "confusion_matrix": {
+        "labels": [
+          "normal",
+          "offensive",
+          "hatespeech"
+        ],
+        "matrix": [
+          [
+            565,
+            148,
+            69
+          ],
+          [
+            171,
+            276,
+            101
+          ],
+          [
+            60,
+            93,
+            441
+          ]
+        ]
+      }
+    },
+    "binary_toxic": {
+      "accuracy": 0.7672,
+      "macro_precision": 0.7587,
+      "macro_recall": 0.7601,
+      "macro_f1": 0.7594,
+      "weighted_f1": 0.7675,
+      "per_class": {
+        "non-toxic": {
+          "precision": 0.7098,
+          "recall": 0.7225,
+          "f1": 0.7161,
+          "support": 782
+        },
+        "toxic": {
+          "precision": 0.8076,
+          "recall": 0.7977,
+          "f1": 0.8026,
+          "support": 1142
+        }
+      },
+      "confusion_matrix": {
+        "labels": [
+          "non-toxic",
+          "toxic"
+        ],
+        "matrix": [
+          [
+            565,
+            217
+          ],
+          [
+            231,
+            911
+          ]
+        ]
+      }
+    }
+  }
+}

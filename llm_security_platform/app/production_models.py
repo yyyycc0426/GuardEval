@@ -33,6 +33,7 @@ class AsyncRun(Base):
     cancel_requested: Mapped[bool] = mapped_column(Boolean, default=False)
     retry_count: Mapped[int] = mapped_column(Integer, default=0)
     created_by: Mapped[str] = mapped_column(String(100))
+    tenant_id: Mapped[str] = mapped_column(String(100), default="default", server_default="default", index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -67,4 +68,23 @@ class AuditLog(Base):
     request_id: Mapped[str] = mapped_column(String(100))
     run_id: Mapped[str | None] = mapped_column(String(36), index=True)
     metadata_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    tenant_id: Mapped[str] = mapped_column(String(100), default="default", server_default="default", index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+
+class TenantConfig(Base):
+    __tablename__ = "tenant_configs"
+
+    tenant_id: Mapped[str] = mapped_column(String(100), primary_key=True)
+    encrypted_keys_json: Mapped[str | None] = mapped_column(Text)
+    qps_limit: Mapped[int] = mapped_column(Integer, default=10)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+
+class TenantBudgetMeter(Base):
+    __tablename__ = "tenant_budget_meters"
+
+    tenant_id: Mapped[str] = mapped_column(String(100), primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(100), primary_key=True)
+    date_str: Mapped[str] = mapped_column(String(10), primary_key=True)
+    tokens_consumed: Mapped[int] = mapped_column(Integer, default=0)

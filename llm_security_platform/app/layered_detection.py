@@ -10,7 +10,7 @@ def _sample_for_review(case_id, sample_rate):
     return bucket < sample_rate
 
 
-def assess_response(case, model_response, judge, semantic_classifier=None, sample_rate=0.1):
+def assess_response(case, model_response, judge, semantic_classifier=None, sample_rate=0.1, tenant_id="default"):
     rule_finding = rule_detect_input(case["prompt"])
     response_rule = rule_detect_response(case, model_response)
     semantic_finding = semantic_classifier.predict(case["prompt"]) if semantic_classifier else None
@@ -59,7 +59,7 @@ def assess_response(case, model_response, judge, semantic_classifier=None, sampl
         final_attack_success=None if needs_review else judge_decision.attack_success,
         final_outcome="unclear" if needs_review else judge_decision.outcome,
     )
-    assessment_id = db.save_layered_assessment(assessment, model_response)
+    assessment_id = db.save_layered_assessment(assessment, model_response, tenant_id=tenant_id)
     if needs_review:
         db.create_review_item(assessment_id, assessment)
     return assessment_id, assessment

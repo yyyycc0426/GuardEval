@@ -14,6 +14,9 @@
       <button class="nav" data-page="create"><span>02</span>创建评测任务</button>
       <button class="nav" data-page="overview"><span>03</span>结果总览</button>
       <button class="nav" data-page="case"><span>04</span>案例证据链</button>
+      <button class="nav" data-page="review"><span>05</span>人工复核</button>
+      <button class="nav" data-page="dashboard"><span>06</span>安全态势</button>
+      <button class="nav" data-page="multimodal"><span>07</span>多模态扫描</button>
     </nav>
     <div class="connection">
       <span class="status-dot"></span><div><strong>Production API</strong><small id="connectionText">检查连接中</small></div>
@@ -23,7 +26,7 @@
   <main>
     <header class="topbar">
       <div><p class="eyebrow">企业大模型安全评测防御平台</p><h1 id="pageTitle">测试集管理</h1></div>
-      <label class="key-field">API Key<input id="apiKey" value="dev-security-key" type="password"></label>
+      <label class="key-field">API Key<input id="apiKey" value="" type="password" placeholder="输入 API Key"></label>
     </header>
     <div id="toast" class="toast hidden"></div>
 
@@ -51,11 +54,11 @@
           <div class="section-heading"><span>实验配置</span><small>提交后由 Celery Worker 异步执行</small></div>
           <label>实验名称<input name="name" value="stage-six-demo" required></label>
           <div class="form-grid">
-            <label>模型<select name="provider" id="provider"><option value="mock">Mock 基线</option><option value="ollama">Ollama</option><option value="openai_compatible">OpenAI Compatible</option></select></label>
+            <label>模型<select name="provider" id="provider"><option value="mock">Mock 基线 (Demo/Mock)</option><option value="ollama">Ollama (Real)</option><option value="openai_compatible">OpenAI Compatible (Real)</option></select></label>
             <label>模型名称<input name="model" id="modelName" value="mock-vulnerable-model"></label>
             <label>数据集<select name="dataset"><option value="all">当前全部样本</option><option value="frozen64">Frozen Benchmark 64</option></select></label>
             <label>防御策略<select name="defense_policy"><option value="none">None</option><option value="baseline">Baseline</option><option value="input_defense+rag_defense+output_defense" selected>Full Defense</option></select></label>
-            <label>Judge<select name="judge_provider"><option value="mock">Rule-backed Judge</option><option value="disabled">Disabled</option><option value="ollama">Ollama Judge</option></select></label>
+            <label>Judge<select name="judge_provider"><option value="mock">Rule-backed Judge (Demo/Mock)</option><option value="disabled">Disabled</option><option value="ollama">Ollama Judge (Real)</option></select></label>
             <label>并发数<input name="concurrency" type="number" min="1" max="8" value="1"></label>
             <label>超时（秒）<input name="timeout" type="number" min="5" value="120"></label>
             <label>温度<input name="temperature" type="number" min="0" max="2" step="0.1" value="0"></label>
@@ -67,7 +70,7 @@
     </section>
 
     <section id="overview" class="page">
-      <div class="toolbar run-toolbar"><select id="runSelect"><option>选择评测 Run</option></select><button id="refreshRuns" class="secondary">刷新 Runs</button></div>
+      <div class="toolbar run-toolbar"><select id="runSelect"><option>选择评测 Run</option></select><button id="refreshRuns" class="secondary">刷新 Runs</button><button id="downloadReportBtn" class="primary" disabled>下载评测报告</button></div>
       <div id="metricCards" class="metrics-grid"></div>
       <div class="dashboard-grid">
         <section class="panel"><div class="section-heading"><span>风险类型分布</span><small>当前 run 的 case 构成</small></div><div id="riskBars" class="bars"></div></section>
@@ -78,8 +81,291 @@
 
     <section id="case" class="page">
       <div class="toolbar"><select id="caseRunSelect"><option>选择 Run</option></select><select id="resultCaseSelect"><option>选择 Case</option></select></div>
-      <div id="caseEmpty" class="empty">选择一个已完成的 case，查看从攻击输入到最终结论的完整证据链。</div>
+      <div id="caseEmpty" class="empty">选择一个已完成的 case，查看从攻击输入 to 最终结论的完整证据链。</div>
       <div id="evidenceChain" class="evidence hidden"></div>
+    </section>
+
+    <section id="review" class="page">
+      <div class="review-layout">
+        <!-- Queue Sidebar -->
+        <aside class="panel review-sidebar" style="flex: 0 0 320px; max-height: 80vh; overflow-y: auto;">
+          <div class="section-heading">
+            <span>待复核队列</span>
+            <small id="queueCount">0 待处理</small>
+          </div>
+          <div class="toolbar" style="margin-bottom:12px;">
+            <select id="reviewStatusFilter" style="width:100%;">
+              <option value="pending">待复核 (Pending)</option>
+              <option value="completed">已完成 (Completed)</option>
+            </select>
+          </div>
+          <div class="review-list" id="reviewQueueList" style="display:flex; flex-direction:column; gap:8px;">
+            <!-- Items injected by JS -->
+          </div>
+        </aside>
+
+        <!-- Main Workspace -->
+        <div class="panel review-workspace" style="flex: 1; min-height: 400px;">
+          <div id="reviewEmpty" class="empty">选择一个复核项，开始进行人工标注和结果审核。</div>
+          <div id="reviewFormContainer" class="hidden">
+            <div class="section-heading">
+              <span id="reviewItemTitle" style="font-size: 16px; font-weight: 800;">复核详情</span>
+              <span class="badge" id="reviewItemCaseId"></span>
+            </div>
+            
+            <div class="evidence-step" style="margin-bottom:16px;">
+              <h3><span>风险类型与判定依据</span></h3>
+              <div class="review-details" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 10px;">
+                <div><strong>风险类型 (Risk Type):</strong> <span id="reviewItemRiskType"></span></div>
+                <div><strong>触发复核原因 (Review Reasons):</strong> <span id="reviewItemReasons"></span></div>
+              </div>
+            </div>
+
+            <div class="evidence-step" style="margin-bottom:16px;">
+              <h3><span>判定模型响应</span></h3>
+              <p style="font-size:11px; color:var(--muted); margin-bottom:6px;">Model Response Text:</p>
+              <pre id="reviewItemResponse" style="max-height: 150px; overflow: auto; background: #121b29; color: #dce6f5; padding: 12px; border-radius: 6px; font-size:11px; white-space:pre-wrap; word-break:break-all;"></pre>
+            </div>
+
+            <!-- Review Annotation Form -->
+            <form id="reviewSubmitForm" class="review-form">
+              <input type="hidden" id="reviewItemInputId">
+              
+              <div class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 12px;">
+                <label>人工最终标签 (Final Label)
+                  <select id="reviewHumanLabel" required style="width:100%; margin-top:6px;">
+                    <option value="safe_answer">safe_answer (安全回答)</option>
+                    <option value="refuse">refuse (拒绝回答/防御成功)</option>
+                    <option value="partial_leak">partial_leak (部分泄漏)</option>
+                    <option value="full_leak">full_leak (完全泄漏)</option>
+                    <option value="tool_abuse">tool_abuse (工具滥用)</option>
+                    <option value="unclear">unclear (不明确/模糊)</option>
+                  </select>
+                </label>
+                <label>是否判定为攻击成功 (Attack Success)
+                  <select id="reviewHumanSuccess" required style="width:100%; margin-top:6px;">
+                    <option value="false">False (防御成功 / 安全)</option>
+                    <option value="true">True (被突破 / 攻击成功)</option>
+                  </select>
+                </label>
+              </div>
+              
+              <div style="margin-bottom: 12px;">
+                <label>复核意见/备注 (Reviewer Note)
+                  <textarea id="reviewNote" rows="3" placeholder="写下你的复核依据（最少3个字符）" required style="width:100%; border:1px solid #cfd6df; border-radius:6px; padding:10px; margin-top:6px; font-family:inherit; font-size:13px;"></textarea>
+                </label>
+              </div>
+
+              <div style="margin-bottom: 12px;">
+                <label>复核人 (Reviewer)
+                  <input id="reviewAuthor" value="human-reviewer" required style="width:100%; margin-top:6px;">
+                </label>
+              </div>
+
+              <button class="primary wide-button" type="submit" style="margin-top: 15px; width: 100%;">提交复核结果</button>
+              <button id="promoteReviewBtn" class="secondary wide-button hidden" type="button" style="margin-top: 10px; width: 100%; background: #10b981; color: white;">一键回流样本库</button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Agreement Metrics Panel -->
+      <div class="panel" style="margin-top: 18px;">
+        <div class="section-heading">
+          <span>法官与人工一致性评估 (Agreement & FPR Metrics)</span>
+        </div>
+        <div class="metrics-grid" id="agreementMetrics">
+          <div class="metric-card">
+            <small>已完成复核数 (Completed)</small>
+            <strong id="metricCompletedReviews">0</strong>
+          </div>
+          <div class="metric-card">
+            <small>判决一致率 (ASR Agreement)</small>
+            <strong id="metricAsrAgreement">0.0%</strong>
+          </div>
+          <div class="metric-card">
+            <small>标签一致率 (Outcome Agreement)</small>
+            <strong id="metricOutcomeAgreement">0.0%</strong>
+          </div>
+          <div class="metric-card">
+            <small>判决冲突数 (ASR Conflicts)</small>
+            <strong id="metricAsrConflicts">0</strong>
+          </div>
+          <div class="metric-card">
+            <small>标签冲突数 (Outcome Conflicts)</small>
+            <strong id="metricOutcomeConflicts">0</strong>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="dashboard" class="page">
+      <div class="toolbar run-toolbar">
+        <select id="dashboardRunSelect"><option value="">选择评测 Run (当前/历史)</option></select>
+        <button id="refreshDashboard" class="secondary">刷新</button>
+      </div>
+
+      <div class="dashboard-stats-grid">
+        <!-- Card 1: Safety Level & Protection Efficiency -->
+        <div class="glass-card stat-box">
+          <div class="card-header">安全防护等级</div>
+          <div class="card-body">
+            <div id="safetyLevelBadge" class="neon-badge green">安全 (Secure)</div>
+            <div class="stat-meta">拦截效率: <span id="blockRateText">100%</span></div>
+          </div>
+        </div>
+
+        <!-- Card 2: ASR Gauge -->
+        <div class="glass-card gauge-box">
+          <div class="card-header">攻击成功率 (ASR)</div>
+          <div class="card-body gauge-container">
+            <svg viewBox="0 0 100 50" class="gauge-svg">
+              <path class="gauge-bg-arc" d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="#edf1f5" stroke-width="8"></path>
+              <path id="asrArc" class="gauge-fill-arc" d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="var(--red)" stroke-width="8" stroke-dasharray="125.6" stroke-dashoffset="125.6"></path>
+            </svg>
+            <div id="asrGaugeValue" class="gauge-value">0%</div>
+          </div>
+        </div>
+
+        <!-- Card 3: FPR Gauge -->
+        <div class="glass-card gauge-box">
+          <div class="card-header">正常任务误杀率 (FPR)</div>
+          <div class="card-body gauge-container">
+            <svg viewBox="0 0 100 50" class="gauge-svg">
+              <path class="gauge-bg-arc" d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="#edf1f5" stroke-width="8"></path>
+              <path id="fprArc" class="gauge-fill-arc" d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="var(--amber)" stroke-width="8" stroke-dasharray="125.6" stroke-dashoffset="125.6"></path>
+            </svg>
+            <div id="fprGaugeValue" class="gauge-value">0%</div>
+          </div>
+        </div>
+
+        <!-- Card 4: Cost & Resource -->
+        <div class="glass-card stat-box">
+          <div class="card-header">资源与预估成本</div>
+          <div class="card-body">
+            <div id="dashboardCostValue" class="cost-value">$0.00</div>
+            <div class="stat-meta">Tokens: <span id="dashboardTokensValue">0</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dashboard-row">
+        <!-- Threat Categories Breakdown -->
+        <div class="glass-card flex-2">
+          <div class="section-heading"><span>威胁拦截分布 (Threat Categories)</span><small>拦截与突破明细</small></div>
+          <div id="threatGrid" class="threat-grid-container">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <!-- Latency Profile -->
+        <div class="glass-card flex-1">
+          <div class="section-heading"><span>响应时延谱 (Latency Profile)</span><small>防御引入的额外开销</small></div>
+          <div class="latency-display">
+            <div class="latency-row"><span class="label">P50 中位数</span><strong id="dashboardP50">-</strong></div>
+            <div class="latency-row"><span class="label">P95 尾部时延</span><strong id="dashboardP95">-</strong></div>
+            <div class="latency-bar-container">
+              <div class="latency-fill" id="latencyFill" style="width: 0%"></div>
+            </div>
+            <p class="latency-desc" id="latencyDesc">时延处于正常区间</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="dashboard-row">
+        <!-- Model & Policy Comparison Matrix -->
+        <div class="glass-card full">
+          <div class="section-heading">
+            <span>安全态势对比矩阵 (Model & Policy Comparative Matrix)</span>
+            <small>横向对比不同模型与防御策略下的安全性与可用性</small>
+          </div>
+          <div class="table-card embedded">
+            <table>
+              <thead>
+                <tr>
+                  <th>模型</th>
+                  <th>防御策略</th>
+                  <th>测试集</th>
+                  <th>攻击成功率 (ASR)</th>
+                  <th>正常任务成功率 (FPR 相对)</th>
+                  <th>P95 时延</th>
+                  <th>安全水位</th>
+                </tr>
+              </thead>
+              <tbody id="dashboardCompareTable">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="multimodal" class="page">
+      <div class="form-layout">
+        <div class="panel form-panel">
+          <div class="section-heading"><span>多模态安全扫描</span><small>上传图片进行安全隐患、文字内容及安全水印检测</small></div>
+          <div class="form-grid" style="grid-template-columns: 1fr; gap: 16px;">
+            <div id="dropZone" class="drop-zone" style="border: 2px dashed #cfd6df; border-radius: 8px; padding: 40px; text-align: center; cursor: pointer; transition: border-color 0.2s;">
+              <span class="icon" style="font-size: 32px; display: block; margin-bottom: 8px;">📷</span>
+              <p>拖拽图片至此，或 <strong>点击上传</strong></p>
+              <input type="file" id="multimodalFile" accept="image/*" style="display: none;">
+            </div>
+            
+            <div style="display: flex; gap: 12px; align-items: center; justify-content: space-between;">
+              <span style="font-size: 13px; color: var(--muted); white-space: nowrap;">或选择内置测试图例:</span>
+              <select id="mockImageSelect" style="flex: 1; max-width: 280px; margin: 0 12px;">
+                <option value="">-- 选择内置测试用例 --</option>
+                <option value="mock_jailbreak_image">内置用例 A：视觉绕过越狱 (Mock Jailbreak)</option>
+                <option value="mock_watermark_image">内置用例 B：机密数据泄漏水印 (Mock Watermark)</option>
+                <option value="mock_sensitive_leak_image">内置用例 C：系统私钥提取 (Mock Prompt Leakage)</option>
+              </select>
+              <button id="scanButton" class="primary" style="padding: 10px 20px;">开始安全扫描</button>
+            </div>
+          </div>
+        </div>
+
+        <aside class="panel run-preview" style="flex: 1.2;">
+          <p class="eyebrow">扫描分析报告</p>
+          <h2 id="scannerStatus">等待文件上传</h2>
+          
+          <div id="scannerResult" class="hidden" style="margin-top: 16px;">
+            <div class="stat-meta" style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+              <span>安全判定:</span>
+              <span id="multimodalSafetyBadge" class="neon-badge green" style="padding: 4px 12px; font-weight: 800; border-radius: 4px;">安全</span>
+            </div>
+            
+            <dl style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px;">
+              <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 6px;">
+                <dt style="color: var(--muted); font-size: 13px;">风险得分</dt>
+                <dd id="multimodalRiskScore" style="font-weight: bold; font-size: 13px;">0.0</dd>
+              </div>
+              <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 6px;">
+                <dt style="color: var(--muted); font-size: 13px;">识别方式</dt>
+                <dd id="multimodalMethods" style="font-size: 13px;">-</dd>
+              </div>
+              <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 6px;">
+                <dt style="color: var(--muted); font-size: 13px;">水印检测</dt>
+                <dd id="multimodalWatermark" style="font-size: 13px;">-</dd>
+              </div>
+            </dl>
+            
+            <div style="margin-bottom: 16px;">
+              <h3 style="font-size: 13px; font-weight: 800; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                <span>📝 OCR 提取内容</span>
+              </h3>
+              <pre id="extractedOcrText" style="background: #121b29; color: #dce6f5; padding: 12px; border-radius: 6px; font-size: 12px; max-height: 120px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; border: 1px solid var(--border);"></pre>
+            </div>
+            
+            <div style="margin-bottom: 16px;">
+              <h3 style="font-size: 13px; font-weight: 800; margin-bottom: 6px;">🎯 拦截证据 (Evidence Chaining)</h3>
+              <ul id="multimodalEvidenceList" style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px;">
+                <!-- Injected dynamically -->
+              </ul>
+            </div>
+          </div>
+        </aside>
+      </div>
     </section>
   </main>
   <script src="/console/app.js"></script>

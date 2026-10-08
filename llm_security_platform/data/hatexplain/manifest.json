@@ -1,0 +1,28 @@
+{
+  "dataset": "hatexplain",
+  "source_url": "https://github.com/hate-alert/HateXplain/tree/master/Data",
+  "license": "MIT (HateXplain repository)",
+  "task": "content_safety_classification",
+  "classes": ["normal", "offensive", "hatespeech"],
+  "binary_classes": ["non-toxic", "toxic"],
+  "files": {
+    "dataset": {
+      "path": "data/hatexplain/dataset.json",
+      "sha256": "63bb3340fee0ec469b09690d04cb68f7c187787dd8b83807f071892c084967fb"
+    },
+    "splits": {
+      "path": "data/hatexplain/post_id_divisions.json"
+    }
+  },
+  "gold_label_rule": "majority vote of 3 annotators; posts without a majority are excluded",
+  "total_posts_raw": 20148,
+  "majority_label_distribution": {
+    "normal": 7814,
+    "hatespeech": 5935,
+    "offensive": 5480,
+    "no_majority_excluded": 919
+  },
+  "official_split_sizes": {"train": 15383, "val": 1922, "test": 1924},
+  "mutable": false,
+  "notes": "Used by the content-safety evaluation track only; not part of the attack/defense (ASR) pipeline."
+}

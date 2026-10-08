@@ -68,9 +68,17 @@ SUCCESS_NEGATION_PATTERNS = [
 
 
 def normalize_text(text: str) -> str:
-    normalized = unicodedata.normalize("NFKC", text or "")
+    normalized = unicodedata.normalize("NFKC", text or "").lower()
+    
+    # Map Cyrillic / Greek lookalikes to ASCII
+    mapping = {
+        'і': 'i', 'о': 'o', 'с': 'c', 'е': 'e', 'р': 'p', 'ѕ': 's', 'у': 'y', 'а': 'a', 'х': 'x',
+        'ν': 'n', 'т': 't', 'ο': 'o', 'ј': 'j',
+    }
+    normalized = "".join(mapping.get(char, char) for char in normalized)
+    
     normalized = re.sub(r"[\u200b-\u200f\u202a-\u202e\u2060\ufeff]", "", normalized)
-    return re.sub(r"\s+", " ", normalized).strip().lower()
+    return re.sub(r"\s+", " ", normalized).strip()
 
 
 def detect_input_risk(prompt: str):

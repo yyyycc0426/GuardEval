@@ -1,8 +1,8 @@
 {
   "status": "passed",
-  "started_at": "2026-06-13T09:54:07.817710+00:00",
-  "completed_at": "2026-06-13T09:54:09.261921+00:00",
-  "duration_seconds": 1.444,
+  "started_at": "2026-06-28T15:20:00.971839+00:00",
+  "completed_at": "2026-06-28T15:20:50.096483+00:00",
+  "duration_seconds": 49.125,
   "checks": {
     "api_health": true,
     "worker_health": true,
@@ -13,8 +13,98 @@
     "audit_record": true,
     "failure_diagnostics": true
   },
-  "successful_run_id": "fc83c117-bb4b-4f0a-8222-beccb2465c50",
-  "diagnostic_run_id": "bc04aa4e-7989-4b07-a8eb-cef645ae07a2",
-  "command_log": [],
-  "verification_mode": "externally_started_compose_plus_async_workflow"
+  "successful_run_id": "292a8a2d-67a7-440d-a311-c89ba7163951",
+  "diagnostic_run_id": "2badfe52-f80c-4dc9-9e8d-646aed6f0da5",
+  "command_log": [
+    {
+      "command": [
+        "docker",
+        "compose",
+        "-f",
+        "llm_security_platform/docker-compose.yml",
+        "up",
+        "-d",
+        "--build"
+      ],
+      "returncode": 0,
+      "duration_seconds": 26.031,
+      "stdout_tail": "abfc540\n#12 exporting attestation manifest sha256:a62ddbd2187ade1e60456317c123b48b09858dedde34eb487a41a3d90abfc540 0.1s done\n#12 exporting manifest list sha256:62fddf24756b9514e6882f8fc4746527a8aa08bc532a987c2a8b7a13908da22d 0.0s done\n#12 naming to docker.io/library/llm_security_platform-api:latest done\n#12 unpacking to docker.io/library/llm_security_platform-api:latest\n#12 unpacking to docker.io/library/llm_security_platform-api:latest 0.4s done\n#12 DONE 0.8s\n\n#13 [migrate] exporting to image\n#13 exporting layers 0.2s done\n#13 exporting manifest sha256:aa5a7362808ce73210c9020d67f97dbc453b0664112a59e801352bf44d0b1721 0.0s done\n#13 exporting config sha256:f9dc2d53f423bc9610ca943554d12b22a1c514318c394de66ede97016ed84315 0.0s done\n#13 exporting attestation manifest sha256:6579e17de7c10c0d50a8701bcd783e45ccc144c18d4316eddcb94777f17d9017 0.1s done\n#13 exporting manifest list sha256:332026cec31857aff4c4cbe4ffdf4dd88e7f616afbd403e8e0edd1b6c1e1096b 0.0s done\n#13 naming to docker.io/library/llm_security_platform-migrate:latest done\n#13 unpacking to docker.io/library/llm_security_platform-migrate:latest 0.4s done\n#13 DONE 0.8s\n\n#14 [worker] exporting to image\n#14 exporting layers 0.2s done\n#14 exporting manifest sha256:b29c44327e9fd90fc751cde3392a09861fd679f5a171141dcd30564161c936b0 0.0s done\n#14 exporting config sha256:a07ff92bdce2e6878dbbd2698a9b2e9d627a0bd7443c84c7aec6ca550b1093c5 0.0s done\n#14 exporting attestation manifest sha256:eadbf865cb08efb0bf578c9b24dcdd2616cb431d56ea69d1459f909b35199a7a 0.1s done\n#14 exporting manifest list sha256:e2a71175583d4cd73e3631075c894c0d67351047e6acab8b160da368a0137d2f 0.0s done\n#14 naming to docker.io/library/llm_security_platform-worker:latest done\n#14 unpacking to docker.io/library/llm_security_platform-worker:latest 0.4s done\n#14 DONE 0.8s\n\n#15 [migrate] resolving provenance for metadata file\n#15 DONE 0.1s\n\n#16 [worker] resolving provenance for metadata file\n#16 DONE 0.1s\n\n#17 [api] resolving provenance for metadata file\n#17 DONE 0.0s",
+      "stderr_tail": "m_security_platform-postgres-1 Creating \n Container llm_security_platform-postgres-1 Created \n Container llm_security_platform-redis-1 Created \n Container llm_security_platform-migrate-1 Creating \n Container llm_security_platform-migrate-1 Created \n Container llm_security_platform-worker-1 Creating \n Container llm_security_platform-api-1 Creating \n Container llm_security_platform-api-1 Created \n Container llm_security_platform-prometheus-1 Creating \n Container llm_security_platform-worker-1 Created \n Container llm_security_platform-prometheus-1 Created \n Container llm_security_platform-grafana-1 Creating \n Container llm_security_platform-grafana-1 Created \n Container llm_security_platform-redis-1 Starting \n Container llm_security_platform-postgres-1 Starting \n Container llm_security_platform-redis-1 Started \n Container llm_security_platform-postgres-1 Started \n Container llm_security_platform-postgres-1 Waiting \n Container llm_security_platform-postgres-1 Healthy \n Container llm_security_platform-migrate-1 Starting \n Container llm_security_platform-migrate-1 Started \n Container llm_security_platform-migrate-1 Waiting \n Container llm_security_platform-redis-1 Waiting \n Container llm_security_platform-redis-1 Waiting \n Container llm_security_platform-migrate-1 Waiting \n Container llm_security_platform-redis-1 Healthy \n Container llm_security_platform-redis-1 Healthy \n Container llm_security_platform-migrate-1 Exited \n Container llm_security_platform-worker-1 Starting \n Container llm_security_platform-migrate-1 Exited \n Container llm_security_platform-api-1 Starting \n Container llm_security_platform-worker-1 Started \n Container llm_security_platform-api-1 Started \n Container llm_security_platform-api-1 Waiting \n Container llm_security_platform-api-1 Healthy \n Container llm_security_platform-prometheus-1 Starting \n Container llm_security_platform-prometheus-1 Started \n Container llm_security_platform-grafana-1 Starting \n Container llm_security_platform-grafana-1 Started"
+    },
+    {
+      "command": [
+        "docker",
+        "compose",
+        "-f",
+        "llm_security_platform/docker-compose.yml",
+        "exec",
+        "-T",
+        "postgres",
+        "pg_isready",
+        "-U",
+        "llm_security",
+        "-d",
+        "llm_security"
+      ],
+      "returncode": 0,
+      "duration_seconds": 0.375,
+      "stdout_tail": "/var/run/postgresql:5432 - accepting connections",
+      "stderr_tail": ""
+    },
+    {
+      "command": [
+        "docker",
+        "compose",
+        "-f",
+        "llm_security_platform/docker-compose.yml",
+        "exec",
+        "-T",
+        "redis",
+        "redis-cli",
+        "ping"
+      ],
+      "returncode": 0,
+      "duration_seconds": 0.328,
+      "stdout_tail": "PONG",
+      "stderr_tail": ""
+    },
+    {
+      "command": [
+        "docker",
+        "compose",
+        "-f",
+        "llm_security_platform/docker-compose.yml",
+        "exec",
+        "-T",
+        "worker",
+        "celery",
+        "-A",
+        "llm_security_platform.app.tasks:celery_app",
+        "inspect",
+        "ping",
+        "--timeout",
+        "10"
+      ],
+      "returncode": 0,
+      "duration_seconds": 11.562,
+      "stdout_tail": "->  celery@50c9eb440a0b: OK\n        pong\n\n1 node online.",
+      "stderr_tail": ""
+    },
+    {
+      "command": [
+        "docker",
+        "compose",
+        "-f",
+        "llm_security_platform/docker-compose.yml",
+        "run",
+        "--rm",
+        "migrate"
+      ],
+      "returncode": 0,
+      "duration_seconds": 2.032,
+      "stdout_tail": "",
+      "stderr_tail": "Container llm_security_platform-postgres-1 Running \n Container llm_security_platform-postgres-1 Waiting \n Container llm_security_platform-postgres-1 Healthy \n Container llm_security_platform-migrate-run-84f96e27eed1 Creating \n Container llm_security_platform-migrate-run-84f96e27eed1 Created \nINFO  [alembic.runtime.migration] Context impl PostgresqlImpl.\nINFO  [alembic.runtime.migration] Will assume transactional DDL."
+    }
+  ],
+  "verification_mode": "script_controlled_compose"
 }

@@ -1,0 +1,15 @@
+.venv/
+.venv*
+.git/
+.idea/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+*.db
+*.db-journal
+*.db-wal
+llm_security_platform/*.db
+llm_security_platform/reports/
+reports/
+.agents/

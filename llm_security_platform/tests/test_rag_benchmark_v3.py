@@ -7,7 +7,7 @@ from llm_security_platform.policies.base import DefenseContext
 from llm_security_platform.policies.policy_engine import PolicyEngine
 
 
-DATASET = Path("llm_security_platform/data/attack_cases_v3.json")
+DATASET = Path(__file__).resolve().parents[1] / "data" / "attack_cases_v3.json"
 
 
 class RagBenchmarkV3Tests(unittest.TestCase):

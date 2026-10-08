@@ -19,3 +19,26 @@ llm_security_platform/data/*private*
 llm_security_platform/data/*labels_private*
 llm_security_platform/reports/holdout_unsealed_results.json
 
+# Personal interview / learning prep — NEVER publish (would reveal coaching/scripts to recruiters)
+docs/interview_mastery/
+docs/learning/
+docs/llm_security_platform_guide/
+
+# Terraform — never commit real variable values or state
+*.tfvars
+!*.tfvars.example
+*.tfstate
+*.tfstate.backup
+.terraform/
+.terraform.lock.hcl
+
+# LoRA fine-tuning env and adapter weights (regenerate with run_lora_safety_judge)
+.venv-ft/
+llm_security_platform/artifacts/lora_safety_judge_*/
+
+# Personal interview-prep notes and local agent config (kept locally, not published)
+project_review/
+docs/interview_evidence_package.md
+.agents/
+# CI workflows kept locally until the codebase passes ruff (deploy job also needs GCP secrets)
+.github/workflows/

@@ -5,7 +5,6 @@ from unittest.mock import patch
 from uuid import uuid4
 
 from llm_security_platform.app import production_store
-from llm_security_platform.app.production_models import Base
 from llm_security_platform.app.production_store import (
     create_async_run,
     get_async_run,

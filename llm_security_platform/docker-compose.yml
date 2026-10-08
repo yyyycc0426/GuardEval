@@ -31,6 +31,10 @@ services:
       OLLAMA_BASE_URL: http://host.docker.internal:11434
       LLM_SECURITY_API_KEY: ${LLM_SECURITY_API_KEY:-dev-security-key}
       LLM_SECURITY_MODEL_API_KEY: ${LLM_SECURITY_MODEL_API_KEY:-}
+      LLM_SECURITY_JWT_SECRET: ${LLM_SECURITY_JWT_SECRET:-security-jwt-secret-key-9417-supersecret-32-bytes-long}
+      LLM_SECURITY_ENCRYPTION_KEY: ${LLM_SECURITY_ENCRYPTION_KEY:-7S64g16Hk3WjGqY0oP9zLmN4vB8xCxX9vB8xCxX9vB8=}
+      LLM_SECURITY_ENV: ${LLM_SECURITY_ENV:-development}
+      LLM_SECURITY_CELERY_EAGER: "false"
     command: ["alembic", "-c", "llm_security_platform/alembic.ini", "upgrade", "head"]
     depends_on:
       postgres:
@@ -43,7 +47,7 @@ services:
     environment: *platform_environment
     command: ["python", "-m", "uvicorn", "llm_security_platform.app.api:app", "--host", "0.0.0.0", "--port", "8020"]
     ports:
-      - "8020:8020"
+      - "127.0.0.1:8020:8020"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8020/health', timeout=3)"]
       interval: 10s
@@ -71,6 +75,32 @@ services:
         condition: service_completed_successfully
       redis:
         condition: service_healthy
+
+  prometheus:
+    image: prom/prometheus:v2.52.0
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    ports:
+      - "127.0.0.1:9090:9090"
+    volumes:
+      - ./prometheus:/etc/prometheus
+    depends_on:
+      api:
+        condition: service_healthy
+
+  grafana:
+    image: grafana/grafana:10.4.2
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD:-admin}
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    depends_on:
+      - prometheus
 
 volumes:
   stage_five_postgres:

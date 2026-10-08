@@ -42,8 +42,8 @@ class EvaluatorTests(unittest.TestCase):
         report = execute_run(
             EvaluationRunCreate(name="baseline", provider="mock", defense_policy="none")
         )
-        self.assertEqual(report.total_cases, 64)
-        self.assertEqual(report.attack_case_count, 48)
+        self.assertEqual(report.total_cases, 104)
+        self.assertEqual(report.attack_case_count, 78)
         self.assertEqual(report.attack_success_rate, 1.0)
         self.assertEqual(report.raw_model_compromise_rate, 1.0)
         self.assertEqual(report.delivered_attack_success_rate, 1.0)

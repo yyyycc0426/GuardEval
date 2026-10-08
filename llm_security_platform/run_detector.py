@@ -1,5 +1,4 @@
 import argparse
-import json
 from pathlib import Path
 
 from llm_security_platform.app.detectors import rule_detect_input

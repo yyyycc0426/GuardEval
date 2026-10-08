@@ -20,14 +20,21 @@ PII_PATTERNS = [
 
 class OutputDefense(DefensePolicy):
     name = "output_defense"
-    version = "output_v1"
+
+    def __init__(self, version="output_v1", config=None):
+        self.version = version
+        self.config = config or {}
+        sec_pats = self.config.get("secret_patterns")
+        self.secret_patterns = [re.compile(p, re.I) for p in sec_pats] if sec_pats else SECRET_PATTERNS
+        pii_pats = self.config.get("pii_patterns")
+        self.pii_patterns = [re.compile(p, re.I) for p in pii_pats] if pii_pats else PII_PATTERNS
 
     def apply(self, context: DefenseContext):
         started = self.timer()
         before = context.response_text
         redacted = before
         evidence = []
-        for pattern in SECRET_PATTERNS + PII_PATTERNS:
+        for pattern in self.secret_patterns + self.pii_patterns:
             for match in pattern.findall(redacted):
                 evidence.append(f"sensitive_output={str(match)[:80]}")
             redacted = pattern.sub("[REDACTED]", redacted)
@@ -39,8 +46,30 @@ class OutputDefense(DefensePolicy):
                 indicator_hits.append(indicator)
         evidence.extend(f"attack_success_indicator={item}" for item in indicator_hits)
 
+        # Detect if model executed instructions extracted from retrieved documents
+        instruction_execution_detected = False
+        executed_commands = []
+        extraction_patterns = [
+            re.compile(r"(?:say|print|reply with|output|write|respond with|echo|execute)(?:\s+|:\s*)['\"“]?([^\s'\"”.,;!?\n]+(?:\s+[^\s'\"”.,;!?\n]+)*)['\"”]?", re.I),
+            re.compile(r"(?:回复|输出|打印|说|显示)(?:\s+|:\s*)['\"“]?([^\s'\"”.,;!?\n]+(?:\s+[^\s'\"”.,;!?\n]+)*)['\"”]?", re.I),
+        ]
+        for doc in context.retrieved_documents:
+            content = doc.get("content", "")
+            for pattern in extraction_patterns:
+                for match in pattern.finditer(content):
+                    target_phrase = match.group(1).strip()
+                    target_phrase = re.sub(r"^['\"“:]+|['\"”:]+$", "", target_phrase).strip()
+                    if len(target_phrase) >= 4:
+                        normalized_target = normalize_text(target_phrase)
+                        if normalized_target and normalized_target in normalized:
+                            instruction_execution_detected = True
+                            executed_commands.append(target_phrase)
+                            
+        if instruction_execution_detected:
+            evidence.extend(f"executed_document_instruction={cmd}" for cmd in executed_commands)
+
         if evidence:
-            if indicator_hits and redacted == before:
+            if (indicator_hits or instruction_execution_detected) and redacted == before:
                 after = "The generated response was withheld because it violated the security policy."
                 action = "rewrite"
             else:
@@ -49,12 +78,12 @@ class OutputDefense(DefensePolicy):
             return self.decision(
                 started_at=started,
                 action=action,
-                risk_level="critical" if indicator_hits else "high",
+                risk_level="critical" if (indicator_hits or instruction_execution_detected) else "high",
                 reason="Sensitive or policy-violating model output was detected and safely transformed.",
                 evidence=evidence,
                 before=before,
                 after=after,
-                metadata={"needs_review": bool(indicator_hits)},
+                metadata={"needs_review": bool(indicator_hits or instruction_execution_detected)},
             )
 
         return self.decision(

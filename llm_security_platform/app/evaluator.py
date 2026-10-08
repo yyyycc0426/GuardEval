@@ -1,6 +1,7 @@
 from collections import Counter, defaultdict
 import math
 from time import perf_counter
+from concurrent.futures import ThreadPoolExecutor
 
 from llm_security_platform.app import db
 from llm_security_platform.app.detectors import evaluate_response
@@ -14,7 +15,7 @@ from llm_security_platform.policies.base import DefenseContext
 from llm_security_platform.policies.policy_engine import PolicyEngine
 
 
-def execute_run(request):
+def execute_run(request, tenant_id="default"):
     cases = db.list_attack_cases(request.case_ids or None)
     if not cases:
         raise ValueError("No attack cases are available for this run")
@@ -27,10 +28,20 @@ def execute_run(request):
         request.defense_policy,
         len(cases),
         run_metadata,
+        tenant_id=tenant_id,
     )
 
-    failed = False
-    policy_engine = PolicyEngine(request.defense_policy)
+    policy_engine = PolicyEngine(request.defense_policy, request.versions)
+    prepared_cases = _prepare_cases(cases, policy_engine)
+    execution_results = _run_concurrent_evaluation(prepared_cases, provider)
+    failed = _process_and_save_outcomes(run_id, execution_results, policy_engine, provider, request.defense_policy, tenant_id)
+
+    db.complete_run(run_id, status="completed_with_errors" if failed else "completed")
+    return build_report(run_id, tenant_id=tenant_id)
+
+
+def _prepare_cases(cases, policy_engine):
+    prepared = []
     for case in cases:
         context = DefenseContext(
             case=case,
@@ -39,6 +50,20 @@ def execute_run(request):
             retrieved_documents=retrieved_documents_for_case(case),
         )
         defense = policy_engine.before_model(context)
+        prepared.append({
+            "case": case,
+            "context": context,
+            "defense": defense,
+        })
+    return prepared
+
+
+def _run_concurrent_evaluation(prepared_cases, provider):
+    def call_provider(item):
+        case = item["case"]
+        context = item["context"]
+        defense = item["defense"]
+
         started_at = perf_counter()
         status = "completed"
         response_text = ""
@@ -47,50 +72,93 @@ def execute_run(request):
         estimated_cost = 0.0
         model_call = {}
         error = None
-        try:
-            if defense.blocked:
-                status = "blocked"
-                response_text = "Request blocked by the configured security policy."
-            else:
+
+        if defense.blocked:
+            status = "blocked"
+            response_text = "Request blocked by the configured security policy."
+        else:
+            try:
                 call_result = provider.generate(defense.system_prompt, defense.user_prompt)
                 raw_response_text = call_result.response_text
                 context.response_text = raw_response_text
-                defense = policy_engine.after_model(context, defense)
-                response_text = defense.response_text
                 token_usage = call_result.token_usage
                 estimated_cost = call_result.estimated_cost
                 model_call = call_result.provider_metadata
-            detector = evaluate_response(case, response_text)
-            for decision in defense.decisions:
-                db.save_defense_audit(run_id, case["case_id"], decision)
-            if defense.review_required and raw_response_text:
-                assess_response(
-                    case,
-                    raw_response_text,
-                    RuleBackedJudge(),
-                    sample_rate=0,
-                )
-        except (ModelProviderError, OSError, ValueError) as exc:
-            failed = True
-            status = "failed"
-            error = str(exc)
-            detector = DetectorDecision(
-                input_risk_score=0.0,
-                input_signals=[],
-                output_signals=[],
-                attack_success=False,
-                decision_reason="Evaluation failed before a security decision could be made.",
-                outcome_label="unclear",
-                business_completed=False,
-            )
+            except (ModelProviderError, OSError, ValueError) as exc:
+                status = "failed"
+                error = str(exc)
+
         latency_ms = round((perf_counter() - started_at) * 1000, 2)
+        return {
+            "case": case,
+            "context": context,
+            "defense": defense,
+            "status": status,
+            "response_text": response_text,
+            "raw_response_text": raw_response_text,
+            "token_usage": token_usage,
+            "estimated_cost": estimated_cost,
+            "model_call": model_call,
+            "error": error,
+            "latency_ms": latency_ms,
+        }
+
+    max_workers = min(16, len(prepared_cases))
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        return list(executor.map(call_provider, prepared_cases))
+
+
+def _process_and_save_outcomes(run_id, execution_results, policy_engine, provider, defense_policy, tenant_id):
+    failed = False
+    for res in execution_results:
+        case = res["case"]
+        context = res["context"]
+        defense = res["defense"]
+        status = res["status"]
+        response_text = res["response_text"]
+        raw_response_text = res["raw_response_text"]
+        token_usage = res["token_usage"]
+        estimated_cost = res["estimated_cost"]
+        model_call = res["model_call"]
+        error = res["error"]
+        latency_ms = res["latency_ms"]
+
+        if status == "failed":
+            failed = True
+            detector = _build_failed_detector_decision()
+        elif status == "blocked":
+            detector = evaluate_response(case, response_text)
+        else:
+            # apply after_model defense
+            defense = policy_engine.after_model(context, defense)
+            response_text = defense.response_text
+            detector = evaluate_response(case, response_text)
+
+        if status != "failed":
+            try:
+                for decision in defense.decisions:
+                    db.save_defense_audit(run_id, case["case_id"], decision, tenant_id=tenant_id)
+                if defense.review_required and raw_response_text:
+                    assess_response(
+                        case,
+                        raw_response_text,
+                        RuleBackedJudge(),
+                        sample_rate=0,
+                        tenant_id=tenant_id,
+                    )
+            except Exception as exc:
+                failed = True
+                status = "failed"
+                error = str(exc)
+                detector = _build_failed_detector_decision()
+
         result = EvaluationResult(
             run_id=run_id,
             case_id=case["case_id"],
             risk_type=case["risk_type"],
             provider=provider.name,
             model=provider.model,
-            defense_policy=request.defense_policy,
+            defense_policy=defense_policy,
             status=status,
             original_prompt=case["prompt"],
             effective_prompt=defense.user_prompt,
@@ -106,17 +174,28 @@ def execute_run(request):
             error=error,
             created_at=db.now_iso(),
         )
-        db.save_result(result)
-
-    db.complete_run(run_id, status="completed_with_errors" if failed else "completed")
-    return build_report(run_id)
+        db.save_result(result, tenant_id=tenant_id)
+    return failed
 
 
-def build_report(run_id):
-    run = db.get_run(run_id)
+def _build_failed_detector_decision():
+    return DetectorDecision(
+        input_risk_score=0.0,
+        input_signals=[],
+        output_signals=[],
+        attack_success=False,
+        decision_reason="Evaluation failed before a security decision could be made.",
+        outcome_label="unclear",
+        business_completed=False,
+    )
+
+
+
+def build_report(run_id, tenant_id="default"):
+    run = db.get_run(run_id, tenant_id=tenant_id)
     if run is None:
         return None
-    results = db.list_results(run_id)
+    results = db.list_results(run_id, tenant_id=tenant_id)
     cases_by_id = {item["case_id"]: item for item in db.list_attack_cases()}
     attack_results = [item for item in results if item["risk_type"] != "benign" and item["status"] != "failed"]
     benign_results = [item for item in results if item["risk_type"] == "benign"]
@@ -243,6 +322,7 @@ def compare_policies(
     versions=None,
     inference_config=None,
     defense_config=None,
+    tenant_id="default",
 ):
     from llm_security_platform.app.schemas import EvaluationRunCreate, default_inference_config
 
@@ -260,7 +340,8 @@ def compare_policies(
             versions=versions or {},
             inference_config=effective_inference_config,
             defense_config=defense_config or {},
-        )
+        ),
+        tenant_id=tenant_id,
     )
     defended = execute_run(
         EvaluationRunCreate(
@@ -272,7 +353,8 @@ def compare_policies(
             versions=versions or {},
             inference_config=effective_inference_config,
             defense_config=defense_config or {},
-        )
+        ),
+        tenant_id=tenant_id,
     )
     return {
         "without_defense": baseline.model_dump(),
@@ -286,7 +368,7 @@ def compare_policies(
     }
 
 
-def compare_models(request):
+def compare_models(request, tenant_id="default"):
     from llm_security_platform.app.schemas import EvaluationRunCreate
 
     reports = []
@@ -302,7 +384,8 @@ def compare_models(request):
                     versions=request.versions,
                     inference_config=target.inference_config,
                     defense_config=request.defense_config,
-                )
+                ),
+                tenant_id=tenant_id,
             )
             reports.append({"status": "completed", "report": report.model_dump()})
         except (ModelProviderError, OSError, ValueError) as exc:

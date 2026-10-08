@@ -1,0 +1,28 @@
+# =============================================================================
+# terraform.tfvars.example
+# Reference template — copy to terraform.tfvars (git-ignored) for local runs,
+# or supply each variable via TF_VAR_* environment variables in CI/CD.
+#
+# NEVER commit actual secret values to source control.
+# =============================================================================
+
+# ── Required: GCP project and region ─────────────────────────────────────────
+project_id      = "your-gcp-project-id"
+region          = "us-central1"
+gcs_bucket_name = "llm-security-platform-storage"
+
+# ── Required sensitive: injected as GitHub Actions secrets ────────────────────
+# In CI these are set via:
+#   TF_VAR_db_password           → secret: GCP_DB_PASSWORD
+#   TF_VAR_jwt_secret_value      → secret: LLM_SECURITY_JWT_SECRET
+#   TF_VAR_api_key_value         → secret: LLM_SECURITY_API_KEY
+#   TF_VAR_encryption_key_value  → secret: LLM_SECURITY_ENCRYPTION_KEY
+#
+# For local runs, fill these in your own terraform.tfvars (never commit it):
+db_password          = "REPLACE_WITH_STRONG_DB_PASSWORD"
+jwt_secret_value     = "REPLACE_WITH_STRONG_JWT_SECRET"
+api_key_value        = "REPLACE_WITH_STRONG_API_KEY"
+encryption_key_value = "REPLACE_WITH_FERNET_KEY"  # generate: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+
+# ── Optional ──────────────────────────────────────────────────────────────────
+environment = "staging"

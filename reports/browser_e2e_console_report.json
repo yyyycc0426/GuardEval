@@ -1,0 +1,107 @@
+{
+  "executed_at_local": "2026-06-29T04:47:05.837Z",
+  "base_url": "http://127.0.0.1:18080/console/",
+  "browser": "chromium headless via playwright-interactive",
+  "api_key_used": "analyst-key role token, secret value not exported",
+  "health_check": {
+    "success": true,
+    "endpoint": "/health"
+  },
+  "console_observations": {
+    "cases_loaded": 113,
+    "connection_text": "API connected",
+    "defense_options": [
+      {
+        "value": "none",
+        "text": "None"
+      },
+      {
+        "value": "baseline",
+        "text": "Baseline"
+      },
+      {
+        "value": "input_defense+rag_defense+output_defense",
+        "text": "Full Defense"
+      }
+    ]
+  },
+  "run": {
+    "run_id": "889d6edb-191d-49ec-bd08-5a53df606ad2",
+    "name": "Playwright Console E2E Mock Run",
+    "status": "COMPLETED",
+    "provider": "mock",
+    "model": "mock-vulnerable-model",
+    "defense_policy": "baseline",
+    "total_cases": 113,
+    "completed_cases": 113,
+    "success_cases": 113,
+    "failed_cases": 0,
+    "progress": 1,
+    "error_summary": null,
+    "cancel_requested": false,
+    "retry_count": 0,
+    "celery_task_id": "07f9833a-6e33-4233-8d80-8cb28d5d01e7",
+    "run_metadata": {
+      "dataset_version": "current_dataset",
+      "policy_version": "baseline",
+      "code_commit_hash": "a081f1b601802e83b82e88f4f141d19cb81ec471",
+      "model_config": {
+        "temperature": 0,
+        "top_p": 1,
+        "seed": 42,
+        "max_tokens": 256,
+        "timeout_seconds": 120
+      },
+      "defense_config": {},
+      "run_lock_key": null,
+      "fingerprint": "bb869921110b4be5fc9a4ee8986283dc95e84bc2d070c47d715a82dc8bacfb57"
+    },
+    "created_by": "demo-analyst",
+    "tenant_id": "tenant_a",
+    "created_at": "2026-06-29T04:42:08.256590",
+    "started_at": "2026-06-29T04:42:09.560608",
+    "completed_at": "2026-06-29T04:42:53.195751"
+  },
+  "detail_status": 200,
+  "detail_summary": {
+    "success": true,
+    "message": "Async evaluation run fetched",
+    "data_keys": [
+      "run",
+      "report",
+      "cases"
+    ],
+    "case_count": 113,
+    "report_keys": [
+      "run_id",
+      "status",
+      "total_cases",
+      "completed_cases",
+      "failed_cases",
+      "attack_success_rate",
+      "raw_model_compromise_rate",
+      "delivered_attack_success_rate",
+      "normal_task_success_rate",
+      "false_positive_rate",
+      "p50_latency_ms",
+      "p95_latency_ms",
+      "total_tokens",
+      "estimated_total_cost"
+    ]
+  },
+  "audit_status": 403,
+  "audit_count": null,
+  "screenshots": [
+    "output/playwright/console_initial.png",
+    "output/playwright/console_analyst_cases.png",
+    "output/playwright/console_overview_after_run.png",
+    "output/playwright/console_current_after_run.png"
+  ],
+  "notes": [
+    "UI loaded API console and fetched current attack cases.",
+    "UI Create Run submitted a mock baseline run; async API reported completion for 113 cases.",
+    "Earlier wrong API key attempt failed as expected, then analyst-key connected successfully.",
+    "A duplicate submission surfaced HTTP 409 idempotency lock behavior; toast rendering showed [object Object], which is a minor UX issue rather than a backend failure.",
+    "Analyst role was denied on /audit-logs with HTTP 403, which is expected RBAC behavior for audit-only privileges."
+  ]
+}

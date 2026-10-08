@@ -1,0 +1,12 @@
+# Optional environment for run_lora_safety_judge.py (LoRA fine-tuning + NF4 inference).
+# Versions used for reports/content_safety_hatexplain_lora_qwen3_1.7b.json (Python 3.12).
+# Install torch from the CUDA index first, e.g.:
+#   pip install torch==2.11.0 --index-url https://download.pytorch.org/whl/cu128
+torch==2.11.0
+transformers==5.19.0
+peft==0.21.2
+accelerate==1.15.0
+bitsandbytes==0.50.2
+scikit-learn==1.9.1
+safetensors==0.8.0
+huggingface_hub==1.33.0

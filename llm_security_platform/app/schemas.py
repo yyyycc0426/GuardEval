@@ -144,6 +144,23 @@ class LayeredAssessmentCreate(BaseModel):
     judge_model_config: dict[str, Any] = Field(default_factory=default_inference_config)
 
 
+class MultimodalAssessmentRequest(BaseModel):
+    case_id: str | None = None
+    image_base64: str
+    image_filename: str | None = "image.png"
+
+
+class MultimodalAssessmentResponse(BaseModel):
+    success: bool
+    text: str
+    methods: list[str]
+    watermark: dict[str, Any]
+    metadata: dict[str, Any]
+    decision: str
+    risk_score: float
+    evidence: list[str]
+
+
 class HumanReviewUpdate(BaseModel):
     human_final_label: OutcomeLabel
     human_attack_success: bool
@@ -228,3 +245,23 @@ class ApiResponse(BaseModel):
     success: bool
     message: str
     data: Any = None
+
+
+class DefensePolicyCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=100)
+    version: str = Field(min_length=1, max_length=100)
+    description: str | None = None
+    config: dict[str, Any] = Field(default_factory=dict)
+
+
+class TenantSignupRequest(BaseModel):
+    tenant_id: str = Field(min_length=3, max_length=50)
+    actor: str = Field(min_length=3, max_length=50)
+    keys: dict[str, str] = Field(default_factory=dict)
+    qps_limit: int = Field(default=10, ge=1, le=100)
+
+
+class TenantSignupResponse(BaseModel):
+    tenant_id: str
+    token: str
+    qps_limit: int
